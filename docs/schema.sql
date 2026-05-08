@@ -1,1 +1,1 @@
--- See DatabaseManager.cpp for schema
+-- schema is generated in DatabaseManager.cpp

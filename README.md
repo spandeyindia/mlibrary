@@ -1,13 +1,8 @@
 # mlibrary
-<<<<<<< HEAD
-ebook library using postgres-sql as backend db
-=======
 
-A Calibre-style ebook library desktop application built with Qt 6 C++ and PostgreSQL.
+A Calibre-style ebook library desktop application built with Qt 6 C++.
 
-## What this repository contains
-
-This repository is a desktop application starter for managing a large ebook library with:
+## Features
 
 - multi-library switching
 - book grid and right-side Details / Preview panels
@@ -18,43 +13,92 @@ This repository is a desktop application starter for managing a large ebook libr
 - modify subject
 - file conversion dialog
 - recursive website mirroring to PDF workflow
-- PostgreSQL schema setup dialog
+- built-in book viewer for text, HTML, PDF, images, and best-effort conversion-based preview for other formats
+- PostgreSQL / MariaDB / MySQL / SQLite / Oracle database setup dialog
 - permanent delete and duplicate merge scaffolding
+- browser-accessible content server with approval workflow
 
-## Repository layout
+## Book viewer
 
+The viewer opens the selected book path and renders:
+- txt
+- html / htm
+- xhtml
+- xml
+- md
+- pdf
+- common images such as png, jpg, jpeg, gif, bmp, webp, svg
+
+For other common ebook formats such as epub, mobi, azw, azw3, dvi, cbr, cbz, and cdr, the viewer attempts a best-effort conversion through Calibre `ebook-convert` before opening the preview.
+
+## Database backends
+
+Supported backend types:
+- PostgreSQL
+- MariaDB / MySQL
+- SQLite
+- Oracle
+
+Qt’s SQL docs say SQLite has the best in-process support on all platforms, while Oracle, PostgreSQL, and MySQL depend on the availability and quality of the matching client libraries. The docs also note that a driver plugin needs the appropriate client library for that DBMS. citeturn303923search0turn668667search2
+
+## Configure the backend before running setup
+
+Open **Setup DB** in the app and select the backend.
+
+### PostgreSQL
+Required:
+- PostgreSQL client libraries
+- Qt `QPSQL` plugin
+- server host, port, database, user, password
+
+Connection string example:
 ```text
-.
-├── CMakeLists.txt
-├── README.md
-├── docs/
-│   └── schema.sql
-└── src/
-    ├── main.cpp
-    ├── MainWindow.*
-    ├── DatabaseSetupDialog.*
-    ├── DatabaseManager.*
-    ├── MetadataService.*
-    ├── MetadataDownloadDialog.*
-    ├── BulkEditDialog.*
-    ├── CopyMoveDialog.*
-    ├── SubjectEditDialog.*
-    ├── ConversionService.*
-    ├── ConversionDialog.*
-    ├── WebsiteImportDialog.*
-    ├── AddLibraryDialog.*
-    └── AddBookDialog.*
+host=localhost port=5432 dbname=ebook_library user=postgres password=postgres
 ```
 
-## Prerequisites
+### MariaDB / MySQL
+Required:
+- MariaDB/MySQL client libraries
+- Qt `QMYSQL` plugin
+- server host, port, database, user, password
+
+Connection string example:
+```text
+host=localhost port=3306 dbname=ebook_library user=root password=secret
+```
+
+### SQLite
+Required:
+- Qt `QSQLITE` plugin
+
+Provide:
+- writable `.db` file path
+
+Example:
+```text
+/home/user/mlibrary.db
+```
+
+### Oracle
+Required:
+- Oracle OCI client libraries
+- Qt `QOCI` plugin
+- `ORACLE_HOME` if your client install requires it
+- `TNS_ADMIN` if you use tnsnames.ora
+- service name or TNS alias if your environment uses one
+
+Provide either:
+- host/port/service connection details, or
+- a TNS alias / service path if your Oracle installation uses that style
+
+## Build prerequisites
 
 You need:
-
-- **Qt 6**
-- **CMake 3.21 or newer**
-- **C++17 toolchain**
-- **PostgreSQL** client/server access
-- Optional external tools used by some dialogs:
+- Qt 6
+- CMake 3.21 or newer
+- a C++17 toolchain
+- the appropriate database client libraries for the backend you choose
+- optional external tools:
   - Calibre `ebook-convert`
   - GNU Wget
 
@@ -63,13 +107,12 @@ You need:
 ### Option A: Qt Online Installer
 1. Install Qt 6 using the Qt Online Installer.
 2. Install Xcode Command Line Tools.
-3. Open the project folder in **Qt Creator**.
+3. Open the project folder in Qt Creator.
 4. Configure a Qt 6 kit.
 5. Build and run.
 
 ### Option B: Homebrew
 Install dependencies:
-
 ```bash
 brew install cmake qt postgresql wget
 ```
@@ -77,23 +120,24 @@ brew install cmake qt postgresql wget
 Then configure CMake using the Qt install prefix. On Apple Silicon this is typically under `/opt/homebrew`.
 
 Example:
-
 ```bash
 cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
 cmake --build build
 ./build/EbookLibraryQt.app/Contents/MacOS/EbookLibraryQt
 ```
 
+Qt’s PDF module includes `QPdfView`, which Qt documents as a complete PDF viewer widget. To build CMake projects with Qt PDF, link the Qt PDF module. citeturn303923search1turn988588search2turn988588search8
+
 ## Linux setup
 
-Install packages through your distribution package manager. For example on Oracle Linux:
-
+Example for Oracle Linux:
 ```bash
 sudo dnf install qt6-qtbase-devel qt6-qttools-devel cmake gcc-c++ postgresql-devel wget
 ```
 
-Then build:
+If you plan to use MariaDB/MySQL or Oracle as the backend, install the matching client libraries and Qt driver plugin support as well. Qt’s SQL docs require the relevant client libraries for those database drivers. citeturn303923search0turn668667search2
 
+Then build:
 ```bash
 cmake -S . -B build
 cmake --build build
@@ -103,11 +147,10 @@ cmake --build build
 ## Windows setup
 
 Install:
-
 - Qt 6
 - CMake
 - MSVC Build Tools
-- PostgreSQL client libraries
+- the database client libraries for your chosen backend
 
 Open the folder in Qt Creator or Visual Studio with CMake support, then build the `EbookLibraryQt` target.
 
@@ -120,101 +163,83 @@ cmake --build build
 
 ## Run
 
+On macOS:
+```bash
+./build/EbookLibraryQt.app/Contents/MacOS/EbookLibraryQt
+```
+
+On Linux/Windows:
 ```bash
 ./build/EbookLibraryQt
 ```
 
-On macOS, the actual app bundle will be:
-
-```bash
-./build/EbookLibraryQt.app
-```
-
 ## Database setup
 
-Use the **Setup DB** button inside the app to create the PostgreSQL schema.
+Use the **Setup DB** button inside the app to choose the backend and create the schema.
 
-The schema includes:
-
-- libraries
-- books
-- book_files
-- book_tags
-- book_subjects
-- tags
-- subjects
-- publishers
-- series
-- file types
-- contributors
+Before clicking **Create Tables**, make sure:
+- the client libraries for the selected backend are installed
+- the Qt driver plugin for that backend is available
+- the connection path or service name is configured correctly
+- the SQLite file path is writable if SQLite is selected
+- the Oracle service / TNS settings are present if Oracle is selected
 
 ## Metadata lookup
 
 Metadata download is wired to internet lookup services:
-
 - Open Library Books API
 - Open Library Covers API
-
-The UI can auto-fill metadata and cover images from ISBN lookups.
 
 ## Conversion features
 
 The conversion dialog is wired to Calibre's `ebook-convert` CLI.
 
 Supported target formats in the UI include:
-
 - PDF
 - EPUB
 - MOBI
 - TXT
 - HTML
 
-For best results, install Calibre on the machine where conversions will run.
-
 ## Website mirroring
 
 The website import dialog uses GNU Wget for recursive site mirroring, then converts mirrored HTML to PDF.
 
-## Packaging / deployment
+## Content server
+
+The app includes a built-in browser-accessible content server.
+
+It exposes:
+- Browse Library
+- Download books
+- Upload books by request, with admin approval
+- Edit metadata by request, with admin approval
+
+It does **not** expose delete-book or delete-library actions.
+
+Start it from the toolbar using **Start Web Server**.
+
+The port is configurable in the dialog and the last used port is remembered.
+The admin email address is configurable as well.
+
+Default local URL:
+```text
+http://127.0.0.1:8088
+```
+
+## Deployment
 
 ### macOS
 Use `macdeployqt` after build:
-
 ```bash
 macdeployqt build/EbookLibraryQt.app
 ```
 
-If you want a distributable disk image, wrap the app bundle in a DMG after deployment.
-
 ### Windows
-Use `windeployqt` on the built `.exe` to collect Qt DLLs and plugins.
+Use `windeployqt` on the built executable to collect Qt DLLs and plugins.
 
 ### Linux
-Use your preferred packaging route:
-
-- AppImage
-- RPM
-- DEB
-
-For Oracle Linux, RPM packaging is usually the cleanest.
-
-## Development notes
-
-The app currently ships as a functional starter with:
-- dialogs
-- schema setup
-- sample data
-- grid and panels
-- management workflows
-
-The next natural steps are:
-- persist all library data to PostgreSQL
-- wire import/export actions into real storage
-- connect copy/move operations to filesystem roots
-- connect metadata edits to database writes
-- connect conversion output back into book records
+Use AppImage, DEB, or RPM packaging. For Oracle Linux, RPM packaging is a good default.
 
 ## License
-
-Add your preferred license before publishing.
->>>>>>> df50915 (Initial ebook library app)
+GPL v3.0

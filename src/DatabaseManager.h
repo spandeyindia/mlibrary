@@ -3,7 +3,17 @@
 
 class QSqlDatabase;
 
+enum class DbBackend {
+    PostgreSQL,
+    MariaDB,
+    SQLite,
+    Oracle
+};
+
 class DatabaseManager {
 public:
-    static bool createSchema(QSqlDatabase &db, QString *errorMessage = nullptr);
+    static QString backendKey(DbBackend backend);
+    static QString driverForBackend(DbBackend backend);
+    static QString schemaSql(DbBackend backend);
+    static bool createSchema(QSqlDatabase &db, DbBackend backend, QString *errorMessage = nullptr);
 };

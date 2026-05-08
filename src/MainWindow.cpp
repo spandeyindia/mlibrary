@@ -8,6 +8,8 @@
 #include "MetadataDownloadDialog.h"
 #include "SubjectEditDialog.h"
 #include "WebsiteImportDialog.h"
+#include "WebServerDialog.h"
+#include "BookViewerDialog.h"
 
 #include <QAction>
 #include <QDate>
@@ -75,11 +77,17 @@ void MainWindow::buildUi() {
     auto *websiteAction = toolbar->addAction("Import Website");
     connect(websiteAction, &QAction::triggered, this, &MainWindow::onImportWebsite);
 
+    auto *webServerAction = toolbar->addAction("Start Web Server");
+    connect(webServerAction, &QAction::triggered, this, &MainWindow::onStartWebServer);
+
     auto *copyMoveAction = toolbar->addAction("Copy / Move");
     connect(copyMoveAction, &QAction::triggered, this, &MainWindow::onCopyMoveBooks);
 
     auto *subjectAction = toolbar->addAction("Modify Subject");
     connect(subjectAction, &QAction::triggered, this, &MainWindow::onModifySubject);
+
+    auto *viewerAction = toolbar->addAction("Book Viewer");
+    connect(viewerAction, &QAction::triggered, this, &MainWindow::onOpenViewer);
 
     auto *mergeAction = toolbar->addAction("Merge Records");
     connect(mergeAction, &QAction::triggered, this, &MainWindow::onMergeDuplicates);
@@ -405,8 +413,21 @@ void MainWindow::onBulkEditMetadata() { BulkEditDialog dialog(this); dialog.exec
 void MainWindow::onDownloadMetadata() { MetadataDownloadDialog dialog(this); dialog.exec(); }
 void MainWindow::onConvertFile() { ConversionDialog dialog(this); dialog.exec(); }
 void MainWindow::onImportWebsite() { WebsiteImportDialog dialog(this); dialog.exec(); }
+
+void MainWindow::onStartWebServer() {
+    WebServerDialog dialog(this);
+    dialog.setLibraries(&libraries_);
+    dialog.exec();
+}
 void MainWindow::onCopyMoveBooks() { CopyMoveDialog dialog(this); dialog.exec(); }
 void MainWindow::onModifySubject() { SubjectEditDialog dialog(this); dialog.exec(); }
+
+void MainWindow::onOpenViewer() {
+    auto *book = findBookById(currentSelectedBookId());
+    BookViewerDialog dialog(this);
+    if (book) dialog.setBook(*book);
+    dialog.exec();
+}
 
 void MainWindow::onDeleteBook() {
     auto *lib = activeLibrary(); const int id = currentSelectedBookId(); if (!lib || id < 0) return; const auto *book = findBookById(id); if (!book) return;

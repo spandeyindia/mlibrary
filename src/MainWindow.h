@@ -25,6 +25,8 @@ private slots:
     void onMergeDuplicates();
     void onConvertFile();
     void onImportWebsite();
+    void onStartWebServer();
+    void onOpenViewer();
     void onCopyMoveBooks();
     void onModifySubject();
     void onLibraryChanged();
