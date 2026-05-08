@@ -13,7 +13,7 @@ class WebServerService : public QObject {
 public:
     explicit WebServerService(QObject *parent = nullptr);
 
-    bool start(quint16 port, const QVector<LibraryData> *libraries, const QString &adminEmail, QString *error = nullptr);
+    bool start(quint16 port, const QVector<LibraryData> *libraries, const QString &adminEmail, const QString &authUser, const QString &authPass, QString *error = nullptr);
     void stop();
     bool isRunning() const;
     quint16 port() const;
@@ -48,4 +48,6 @@ private:
     quint16 port_ = 0;
     const QVector<LibraryData> *libraries_ = nullptr;
     QString adminEmail_;
+    QString authUser_;
+    QString authPass_;
 };

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(EbookLibraryQt VERSION 1.2.0 LANGUAGES CXX)
+project(EbookLibraryQt VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,6 +42,20 @@ qt_add_executable(EbookLibraryQt
     src/WebServerDialog.cpp
     src/BookViewerDialog.h
     src/BookViewerDialog.cpp
+    src/PhysicalCopyDialog.h
+    src/PhysicalCopyDialog.cpp
+    src/SearchDialog.h
+    src/SearchDialog.cpp
+    src/AuthoringHelperDialog.h
+    src/AuthoringHelperDialog.cpp
+    src/AboutDialog.h
+    src/AboutDialog.cpp
+    src/LicenseDialog.h
+    src/LicenseDialog.cpp
+    src/ShortcutsDialog.h
+    src/ShortcutsDialog.cpp
+    src/PreferencesDialog.h
+    src/PreferencesDialog.cpp
     src/MainWindow.h
     src/MainWindow.cpp
 )

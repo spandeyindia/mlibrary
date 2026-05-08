@@ -2,18 +2,20 @@
 #include "DatabaseManager.h"
 
 #include <QComboBox>
+#include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QSettings>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
 DatabaseSetupDialog::DatabaseSetupDialog(QWidget *parent) : QDialog(parent) {
     setWindowTitle("Database Setup");
-    resize(820, 520);
+    resize(860, 560);
 
     auto *layout = new QVBoxLayout(this);
     auto *form = new QFormLayout();
@@ -23,6 +25,7 @@ DatabaseSetupDialog::DatabaseSetupDialog(QWidget *parent) : QDialog(parent) {
     backendCombo_->addItem("MariaDB / MySQL", static_cast<int>(DbBackend::MariaDB));
     backendCombo_->addItem("SQLite", static_cast<int>(DbBackend::SQLite));
     backendCombo_->addItem("Oracle", static_cast<int>(DbBackend::Oracle));
+    backendCombo_->addItem("JSON Flatfile", static_cast<int>(DbBackend::JsonFlatfile));
 
     connEdit_ = new QLineEdit(this);
     connEdit_->setPlaceholderText("host=localhost port=5432 dbname=ebook_library user=postgres password=postgres");
@@ -30,12 +33,18 @@ DatabaseSetupDialog::DatabaseSetupDialog(QWidget *parent) : QDialog(parent) {
     sqlitePathEdit_ = new QLineEdit(this);
     sqlitePathEdit_->setPlaceholderText("/path/to/mlibrary.db");
 
+    jsonPathEdit_ = new QLineEdit(this);
+    jsonPathEdit_->setPlaceholderText("/path/to/mlibrary.json");
+
     adminPathEdit_ = new QLineEdit(this);
     adminPathEdit_->setPlaceholderText("Optional: TNS alias / service path for Oracle");
+    multiUserCheck_ = new QCheckBox("Enable users, roles, and authentication", this);
 
     form->addRow("Backend:", backendCombo_);
+    form->addRow("", multiUserCheck_);
     form->addRow("Connection string:", connEdit_);
     form->addRow("SQLite file path:", sqlitePathEdit_);
+    form->addRow("JSON flatfile path:", jsonPathEdit_);
     form->addRow("Oracle service/TNS path:", adminPathEdit_);
     layout->addLayout(form);
 
@@ -46,6 +55,16 @@ DatabaseSetupDialog::DatabaseSetupDialog(QWidget *parent) : QDialog(parent) {
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
     auto *createBtn = new QPushButton("Create Tables", this);
     buttons->addButton(createBtn, QDialogButtonBox::ActionRole);
+
+    QSettings s("mlibrary", "mlibrary");
+    const int b = s.value("db/backend", int(DbBackend::PostgreSQL)).toInt();
+    const int idx = backendCombo_->findData(b);
+    if (idx >= 0) backendCombo_->setCurrentIndex(idx);
+    connEdit_->setText(s.value("db/conn", "host=localhost port=5432 dbname=ebook_library user=postgres password=postgres").toString());
+    sqlitePathEdit_->setText(s.value("db/sqlite", "").toString());
+    jsonPathEdit_->setText(s.value("db/json", "").toString());
+    adminPathEdit_->setText(s.value("db/oracle", "").toString());
+    multiUserCheck_->setChecked(s.value("security/multiUserMode", false).toBool());
 
     connect(createBtn, &QPushButton::clicked, this, &DatabaseSetupDialog::createTables);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -60,10 +79,31 @@ DbBackend DatabaseSetupDialog::selectedBackend() const {
 
 QString DatabaseSetupDialog::connectionString() const { return connEdit_->text().trimmed(); }
 QString DatabaseSetupDialog::sqlitePath() const { return sqlitePathEdit_->text().trimmed(); }
+QString DatabaseSetupDialog::jsonPath() const { return jsonPathEdit_->text().trimmed(); }
 
 void DatabaseSetupDialog::createTables() {
     const DbBackend backend = selectedBackend();
+    if (backend == DbBackend::JsonFlatfile) {
+        QString error;
+        if (DatabaseManager::createJsonFlatfile(jsonPath(), &error)) {
+            QSettings s("mlibrary", "mlibrary");
+            s.setValue("security/multiUserMode", multiUserCheck_->isChecked());
+            resultText_ = "JSON flatfile created or refreshed successfully.";
+            output_->append(resultText_);
+        } else {
+            resultText_ = error;
+            output_->append("JSON flatfile creation failed:");
+            output_->append(error);
+        }
+        return;
+    }
+
     const QString driver = DatabaseManager::driverForBackend(backend);
+    if (driver.isEmpty()) {
+        resultText_ = "No SQL driver available for selected backend.";
+        output_->append(resultText_);
+        return;
+    }
 
     if (QSqlDatabase::contains("ebook_setup_connection")) {
         QSqlDatabase::removeDatabase("ebook_setup_connection");
@@ -105,9 +145,11 @@ void DatabaseSetupDialog::createTables() {
     }
 
     QString error;
-    if (DatabaseManager::createSchema(db, backend, &error)) {
+    if (DatabaseManager::createSchema(db, backend, multiUserCheck_->isChecked(), &error)) {
         resultText_ = "Database tables created or already existed successfully.";
         output_->append(resultText_);
+        QSettings s("mlibrary", "mlibrary");
+        s.setValue("security/multiUserMode", multiUserCheck_->isChecked());
     } else {
         resultText_ = error;
         output_->append("Database setup failed:");

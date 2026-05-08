@@ -29,6 +29,13 @@ private slots:
     void onOpenViewer();
     void onCopyMoveBooks();
     void onModifySubject();
+    void onOpenPreferences();
+    void onShowAbout();
+    void onShowLicense();
+    void onShowShortcuts();
+    void onOpenSearchEngine();
+    void onOpenAiHelper();
+    void onManagePhysicalCopy();
     void onLibraryChanged();
     void onBookSelectionChanged();
     void showDetailsTab();

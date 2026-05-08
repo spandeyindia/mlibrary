@@ -2,6 +2,7 @@
 #include "WebServerService.h"
 #include "LibraryData.h"
 
+#include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -22,9 +23,22 @@ WebServerDialog::WebServerDialog(QWidget *parent) : QDialog(parent) {
     portEdit_->setText("8088");
     adminEmailEdit_ = new QLineEdit(this);
     adminEmailEdit_->setPlaceholderText("admin@example.com");
+    requireAuthCheck_ = new QCheckBox("Require basic auth", this);
+    webUserEdit_ = new QLineEdit(this);
+    webPassEdit_ = new QLineEdit(this);
+    webPassEdit_->setEchoMode(QLineEdit::Password);
+    httpsCheck_ = new QCheckBox("Enable HTTPS (settings only for now)", this);
+    tlsCertEdit_ = new QLineEdit(this);
+    tlsKeyEdit_ = new QLineEdit(this);
 
     form->addRow("Port:", portEdit_);
     form->addRow("Admin email:", adminEmailEdit_);
+    form->addRow("", requireAuthCheck_);
+    form->addRow("Web username:", webUserEdit_);
+    form->addRow("Web password:", webPassEdit_);
+    form->addRow("", httpsCheck_);
+    form->addRow("TLS certificate path:", tlsCertEdit_);
+    form->addRow("TLS key path:", tlsKeyEdit_);
     layout->addLayout(form);
 
     log_ = new QTextEdit(this);
@@ -60,13 +74,26 @@ void WebServerDialog::setLibraries(const QVector<LibraryData> *libraries) {
 void WebServerDialog::loadSettings() {
     QSettings settings("mlibrary", "mlibrary");
     portEdit_->setText(QString::number(settings.value("webserver/port", 8088).toInt()));
-    adminEmailEdit_->setText(settings.value("webserver/adminEmail", "").toString());
+    adminEmailEdit_->setText(settings.value("web/adminEmail", settings.value("webserver/adminEmail", "")).toString());
+    const bool multiUserMode = settings.value("security/multiUserMode", false).toBool();
+    requireAuthCheck_->setChecked(settings.value("web/authEnabled", multiUserMode).toBool());
+    webUserEdit_->setText(settings.value("web/user", "").toString());
+    webPassEdit_->setText(settings.value("web/pass", "").toString());
+    httpsCheck_->setChecked(settings.value("web/https", false).toBool());
+    tlsCertEdit_->setText(settings.value("web/cert", "").toString());
+    tlsKeyEdit_->setText(settings.value("web/key", "").toString());
 }
 
 void WebServerDialog::saveSettings() {
     QSettings settings("mlibrary", "mlibrary");
     settings.setValue("webserver/port", portEdit_->text().toInt());
-    settings.setValue("webserver/adminEmail", adminEmailEdit_->text().trimmed());
+    settings.setValue("web/adminEmail", adminEmailEdit_->text().trimmed());
+    settings.setValue("web/authEnabled", requireAuthCheck_->isChecked());
+    settings.setValue("web/user", webUserEdit_->text().trimmed());
+    settings.setValue("web/pass", webPassEdit_->text());
+    settings.setValue("web/https", httpsCheck_->isChecked());
+    settings.setValue("web/cert", tlsCertEdit_->text().trimmed());
+    settings.setValue("web/key", tlsKeyEdit_->text().trimmed());
 }
 
 void WebServerDialog::startServer() {
@@ -82,7 +109,7 @@ void WebServerDialog::startServer() {
     }
 
     QString error;
-    if (server_->start(port, libraries_, adminEmailEdit_->text(), &error)) {
+    if (server_->start(port, libraries_, adminEmailEdit_->text(), requireAuthCheck_->isChecked() ? webUserEdit_->text() : QString(), requireAuthCheck_->isChecked() ? webPassEdit_->text() : QString(), &error)) {
         log_->append(QString("Started at http://127.0.0.1:%1").arg(server_->port()));
         saveSettings();
     } else {

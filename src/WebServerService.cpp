@@ -14,10 +14,12 @@
 
 WebServerService::WebServerService(QObject *parent) : QObject(parent) {}
 
-bool WebServerService::start(quint16 port, const QVector<LibraryData> *libraries, const QString &adminEmail, QString *error) {
+bool WebServerService::start(quint16 port, const QVector<LibraryData> *libraries, const QString &adminEmail, const QString &authUser, const QString &authPass, QString *error) {
     stop();
     libraries_ = libraries;
     adminEmail_ = adminEmail.trimmed();
+    authUser_ = authUser.trimmed();
+    authPass_ = authPass;
 
     server_ = new QTcpServer(this);
     connect(server_, &QTcpServer::newConnection, this, &WebServerService::onNewConnection);
@@ -80,6 +82,26 @@ QByteArray WebServerService::handleRequest(const QString &requestText) const {
     const QUrl url(httpTarget(requestText));
     const QString path = url.path();
     const QString body = httpBody(requestText);
+
+    if (!authUser_.isEmpty()) {
+        const QString authLine = requestText.section("\r\n", 1, -1);
+        const QRegularExpression re(R"(Authorization:\s*Basic\s+([A-Za-z0-9+/=]+))", QRegularExpression::CaseInsensitiveOption);
+        const auto match = re.match(authLine);
+        bool authorized = false;
+        if (match.hasMatch()) {
+            const QByteArray decoded = QByteArray::fromBase64(match.captured(1).toUtf8());
+            const QString pair = QString::fromUtf8(decoded);
+            authorized = pair == QString("%1:%2").arg(authUser_, authPass_);
+        }
+        if (!authorized && path != "/") {
+            QByteArray resp = "HTTP/1.1 401 Unauthorized\r\n";
+            resp += "WWW-Authenticate: Basic realm=\"mlibrary\"\r\n";
+            resp += "Content-Type: text/html; charset=utf-8\r\n";
+            resp += "Connection: close\r\n\r\n";
+            resp += "<html><body><h1>Unauthorized</h1></body></html>";
+            return resp;
+        }
+    }
 
     if (method == "GET" && (path == "/" || path.isEmpty())) {
         return httpResponse(200, "OK", renderHome().toUtf8());

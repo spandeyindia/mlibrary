@@ -1,5 +1,7 @@
 # mlibrary
 
+Version 1.0.0
+
 A Calibre-style ebook library desktop application built with Qt 6 C++.
 
 ## Features
@@ -38,6 +40,7 @@ Supported backend types:
 - MariaDB / MySQL
 - SQLite
 - Oracle
+- JSON Flatfile
 
 Qt’s SQL docs say SQLite has the best in-process support on all platforms, while Oracle, PostgreSQL, and MySQL depend on the availability and quality of the matching client libraries. The docs also note that a driver plugin needs the appropriate client library for that DBMS. citeturn303923search0turn668667search2
 
@@ -90,6 +93,18 @@ Required:
 Provide either:
 - host/port/service connection details, or
 - a TNS alias / service path if your Oracle installation uses that style
+
+### JSON Flatfile
+Required:
+- no SQL server
+- writable JSON file location
+- a path you can create and reopen later
+
+Provide:
+- full path to the JSON flatfile, such as:
+```text
+/home/user/mlibrary.json
+```
 
 ## Build prerequisites
 
@@ -182,6 +197,7 @@ Before clicking **Create Tables**, make sure:
 - the Qt driver plugin for that backend is available
 - the connection path or service name is configured correctly
 - the SQLite file path is writable if SQLite is selected
+- the JSON flatfile path is writable if JSON Flatfile is selected
 - the Oracle service / TNS settings are present if Oracle is selected
 
 ## Metadata lookup
@@ -243,3 +259,105 @@ Use AppImage, DEB, or RPM packaging. For Oracle Linux, RPM packaging is a good d
 
 ## License
 GPL v3.0
+
+
+## Added application-level dialogs
+
+The app now also includes:
+- About dialog with owner / version details
+- GPL v3.0 license dialog
+- Keyboard shortcuts dialog
+- Preferences dialog with database profiles, email settings, and web server security settings
+
+## Notes on authentication and HTTPS
+
+The built-in content server now supports optional HTTP basic authentication using configured credentials.
+
+HTTPS settings are stored in Preferences as part of the configuration workflow, while the server currently remains an HTTP listener. TLS wiring can be added later if you want the server to terminate SSL directly inside the app.
+
+
+## Search engine
+
+The app now includes an advanced search dialog that can search:
+- title
+- authors
+- subject
+- tags
+- description
+- remarks
+- publisher
+- storage path
+
+It supports:
+- current library search
+- all libraries search
+- favorites-only filtering
+- exact phrase matching
+- ranked results
+
+## AI authoring helper
+
+The app now also includes an AI authoring helper for:
+- synopsis
+- back-cover copy
+- author bio
+- chapter outline
+- series pitch
+- improvement suggestions
+
+It can work in two modes:
+- local fallback templates, with no external service required
+- remote AI endpoint mode, using a configurable OpenAI-compatible HTTP endpoint
+
+### AI helper configuration
+
+Open **Preferences** and set:
+- endpoint URL
+- API key
+- model name
+- system prompt
+
+If remote mode is off or the endpoint is blank, the helper uses the local fallback generator.
+
+## JSON flatfile backend
+
+When you choose JSON Flatfile, the app creates a metadata document on disk and uses that path as the storage location. The file is a single structured JSON document containing libraries, books, tags, subjects, publishers, series, and related link tables.
+
+
+## Single-user vs multi-user mode
+
+During **Setup DB**, choose whether authentication is enabled.
+
+- **Single-user mode**: no authentication, no user/role workflow, suitable for a personal laptop
+- **Multi-user mode**: creates users, roles, permissions, sessions, and audit tables for shared or enterprise use
+
+The built-in web server follows that setting by default, so a laptop install can remain simple while enterprise deployments can turn authentication on.
+
+
+## Physical library support
+
+The app now also supports cataloging physical books.
+
+You can track:
+- physical location
+- section or room
+- shelf or rack
+- checked-out status
+- borrower name and contact
+- checkout date
+- due date
+- accession number
+- barcode
+- loan notes
+
+This can be used for:
+- home libraries
+- personal collections
+- office reference shelves
+- enterprise physical archives
+- hybrid libraries that mix digital files and print copies
+
+A dedicated **Physical Copy** dialog lets you update the selected book’s physical inventory details.
+
+
+Official website: https://www.adyainfotech.com

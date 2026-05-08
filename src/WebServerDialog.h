@@ -6,6 +6,7 @@
 class QLineEdit;
 class QTextEdit;
 class QPushButton;
+class QCheckBox;
 class WebServerService;
 
 class WebServerDialog : public QDialog {
@@ -26,6 +27,12 @@ private:
     const QVector<LibraryData> *libraries_ = nullptr;
     QLineEdit *portEdit_ = nullptr;
     QLineEdit *adminEmailEdit_ = nullptr;
+    QLineEdit *webUserEdit_ = nullptr;
+    QLineEdit *webPassEdit_ = nullptr;
+    QCheckBox *requireAuthCheck_ = nullptr;
+    QCheckBox *httpsCheck_ = nullptr;
+    QLineEdit *tlsCertEdit_ = nullptr;
+    QLineEdit *tlsKeyEdit_ = nullptr;
     QTextEdit *log_ = nullptr;
     QPushButton *startBtn_ = nullptr;
     QPushButton *stopBtn_ = nullptr;

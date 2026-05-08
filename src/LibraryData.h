@@ -29,6 +29,17 @@ struct Book {
     QStringList formats;
     QString storagePath;
     QString checksum;
+    QString physicalLocation;
+    QString physicalSection;
+    QString physicalShelf;
+    QString physicalStatus; // On shelf, Checked out, Reserved, In transit
+    QString checkedOutTo;
+    QString checkedOutContact;
+    QDate checkedOutOn;
+    QDate dueDate;
+    QString accessionNumber;
+    QString barcode;
+    QString loanNotes;
     QString coverPath;
 };
 

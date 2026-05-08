@@ -10,6 +10,13 @@
 #include "WebsiteImportDialog.h"
 #include "WebServerDialog.h"
 #include "BookViewerDialog.h"
+#include "SearchDialog.h"
+#include "AuthoringHelperDialog.h"
+#include "PhysicalCopyDialog.h"
+#include "PreferencesDialog.h"
+#include "AboutDialog.h"
+#include "LicenseDialog.h"
+#include "ShortcutsDialog.h"
 
 #include <QAction>
 #include <QDate>
@@ -89,13 +96,41 @@ void MainWindow::buildUi() {
     auto *viewerAction = toolbar->addAction("Book Viewer");
     connect(viewerAction, &QAction::triggered, this, &MainWindow::onOpenViewer);
 
+    auto *physicalAction = toolbar->addAction("Physical Copy");
+    connect(physicalAction, &QAction::triggered, this, &MainWindow::onManagePhysicalCopy);
+
+    auto *searchEngineAction = toolbar->addAction("Search Engine");
+    connect(searchEngineAction, &QAction::triggered, this, &MainWindow::onOpenSearchEngine);
+
+    auto *aiAction = toolbar->addAction("AI Helper");
+    connect(aiAction, &QAction::triggered, this, &MainWindow::onOpenAiHelper);
+
     auto *mergeAction = toolbar->addAction("Merge Records");
     connect(mergeAction, &QAction::triggered, this, &MainWindow::onMergeDuplicates);
 
     auto *deleteAction = toolbar->addAction("Delete");
     connect(deleteAction, &QAction::triggered, this, &MainWindow::onDeleteBook);
 
+    auto *prefsAction = toolbar->addAction("Preferences");
+    connect(prefsAction, &QAction::triggered, this, &MainWindow::onOpenPreferences);
+    auto *aboutAction = toolbar->addAction("About");
+    connect(aboutAction, &QAction::triggered, this, &MainWindow::onShowAbout);
+
     toolbar->addSeparator();
+
+
+auto *toolsMenu = menuBar()->addMenu("Tools");
+toolsMenu->addAction("Search Engine", this, &MainWindow::onOpenSearchEngine, QKeySequence("Ctrl+F"));
+toolsMenu->addAction("AI Authoring Helper", this, &MainWindow::onOpenAiHelper, QKeySequence("Ctrl+Shift+A"));
+
+
+auto *settingsMenu = menuBar()->addMenu("Settings");
+settingsMenu->addAction("Preferences", this, &MainWindow::onOpenPreferences, QKeySequence("Ctrl+P"));
+
+auto *helpMenu = menuBar()->addMenu("Help");
+helpMenu->addAction("Keyboard Shortcuts", this, &MainWindow::onShowShortcuts, QKeySequence("Ctrl+/"));
+helpMenu->addAction("License", this, &MainWindow::onShowLicense);
+helpMenu->addAction("About", this, &MainWindow::onShowAbout, QKeySequence(Qt::Key_F1));
 
     searchEdit_ = new QLineEdit(this);
     searchEdit_->setPlaceholderText("Search title, author, tags, subject, remarks...");
@@ -367,6 +402,17 @@ QString MainWindow::bookToHtml(const Book &book) const {
     html += "<p><b>Formats:</b> " + htmlEscape(book.formats.join(", ")) + "</p>";
     html += "<p><b>Storage Path:</b> " + htmlEscape(book.storagePath) + "</p>";
     html += "<p><b>Checksum:</b> " + htmlEscape(book.checksum) + "</p>";
+    html += "<p><b>Physical Location:</b> " + htmlEscape(book.physicalLocation.isEmpty() ? "—" : book.physicalLocation) + "</p>";
+    html += "<p><b>Section / Room:</b> " + htmlEscape(book.physicalSection.isEmpty() ? "—" : book.physicalSection) + "</p>";
+    html += "<p><b>Shelf / Rack:</b> " + htmlEscape(book.physicalShelf.isEmpty() ? "—" : book.physicalShelf) + "</p>";
+    html += "<p><b>Status:</b> " + htmlEscape(book.physicalStatus.isEmpty() ? "On shelf" : book.physicalStatus) + "</p>";
+    html += "<p><b>Checked out to:</b> " + htmlEscape(book.checkedOutTo.isEmpty() ? "—" : book.checkedOutTo) + "</p>";
+    html += "<p><b>Checked out contact:</b> " + htmlEscape(book.checkedOutContact.isEmpty() ? "—" : book.checkedOutContact) + "</p>";
+    html += "<p><b>Checked out on:</b> " + htmlEscape(book.checkedOutOn.isValid() ? book.checkedOutOn.toString(Qt::ISODate) : "—") + "</p>";
+    html += "<p><b>Due date:</b> " + htmlEscape(book.dueDate.isValid() ? book.dueDate.toString(Qt::ISODate) : "—") + "</p>";
+    html += "<p><b>Accession number:</b> " + htmlEscape(book.accessionNumber.isEmpty() ? "—" : book.accessionNumber) + "</p>";
+    html += "<p><b>Barcode:</b> " + htmlEscape(book.barcode.isEmpty() ? "—" : book.barcode) + "</p>";
+    html += "<p><b>Loan notes:</b> " + htmlEscape(book.loanNotes.isEmpty() ? "—" : book.loanNotes) + "</p>";
     if (!book.coverPath.isEmpty()) html += "<p><b>Cover Path:</b> " + htmlEscape(book.coverPath) + "</p>";
     return html;
 }
@@ -422,9 +468,26 @@ void MainWindow::onStartWebServer() {
 void MainWindow::onCopyMoveBooks() { CopyMoveDialog dialog(this); dialog.exec(); }
 void MainWindow::onModifySubject() { SubjectEditDialog dialog(this); dialog.exec(); }
 
+void MainWindow::onOpenPreferences() { PreferencesDialog dialog(this); dialog.exec(); }
+void MainWindow::onShowAbout() { AboutDialog dialog(this); dialog.exec(); }
+void MainWindow::onShowLicense() { LicenseDialog dialog(this); dialog.exec(); }
+void MainWindow::onShowShortcuts() { ShortcutsDialog dialog(this); dialog.exec(); }
+
 void MainWindow::onOpenViewer() {
     auto *book = findBookById(currentSelectedBookId());
     BookViewerDialog dialog(this);
+    if (book) dialog.setBook(*book);
+    dialog.exec();
+}
+
+void MainWindow::onOpenSearchEngine() {
+    SearchDialog dialog(&libraries_, this);
+    dialog.exec();
+}
+
+void MainWindow::onOpenAiHelper() {
+    auto *book = findBookById(currentSelectedBookId());
+    AuthoringHelperDialog dialog(this);
     if (book) dialog.setBook(*book);
     dialog.exec();
 }
