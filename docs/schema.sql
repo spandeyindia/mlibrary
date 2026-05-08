@@ -1,0 +1,1 @@
+-- See DatabaseManager.cpp for schema

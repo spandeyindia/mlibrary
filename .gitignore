@@ -1,0 +1,15 @@
+build/
+*.user
+*.userosscache
+*.pro.user
+*.autosave
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.app
+.DS_Store
+.idea/
+.vscode/
+cmake-build-*/
